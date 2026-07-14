@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports Generator - Smart Health Monitoring</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link href="/css/style.css" rel="stylesheet">
+  <style>
+    /* Printing enhancements */
+    @media print {
+      .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+      }
+      .print-header h2 { margin: 0; color: #1e3a8a; }
+      .print-header p { margin: 5px 0 0 0; color: #666; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Sidebar container -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Greeting Bar -->
+    <div id="top-bar-container"></div>
+
+    <!-- Print-only Header -->
+    <div class="print-header d-none">
+      <h2>Smart Community Health Monitoring and Early Warning System</h2>
+      <p>Water-Borne Diseases Watch Report - Rural North-East India</p>
+      <small>Report generated on: <span id="generation-time"></span></small>
+    </div>
+
+    <!-- FILTER BAR CARD -->
+    <div class="card shadow-sm border-0 p-4 mb-4 no-print">
+      <h5 class="fw-bold mb-3"><i class="bi bi-funnel-fill text-primary me-2"></i>Filter & Generate Reports</h5>
+      
+      <form id="filter-form" onsubmit="applyFilters(event)">
+        <div class="row g-3">
+          <!-- Village -->
+          <div class="col-12 col-md-4 col-lg-2.5">
+            <label for="filter-village" class="form-label small fw-semibold">Village</label>
+            <input type="text" class="form-control form-control-sm" id="filter-village" placeholder="Search village...">
+          </div>
+          <!-- District -->
+          <div class="col-12 col-md-4 col-lg-2.5">
+            <label for="filter-district" class="form-label small fw-semibold">District</label>
+            <input type="text" class="form-control form-control-sm" id="filter-district" placeholder="Search district...">
+          </div>
+          <!-- Disease -->
+          <div class="col-12 col-md-4 col-lg-2">
+            <label for="filter-disease" class="form-label small fw-semibold">Disease</label>
+            <select class="form-select form-select-sm" id="filter-disease">
+              <option value="">All Diseases</option>
+              <option value="Cholera">Cholera</option>
+              <option value="Typhoid">Typhoid</option>
+              <option value="Diarrhea">Diarrhea</option>
+              <option value="Dysentery">Dysentery</option>
+              <option value="Hepatitis A">Hepatitis A</option>
+            </select>
+          </div>
+          <!-- Date Range Start -->
+          <div class="col-6 col-md-4 col-lg-2">
+            <label for="filter-start" class="form-label small fw-semibold">Start Date</label>
+            <input type="date" class="form-control form-control-sm" id="filter-start">
+          </div>
+          <!-- Date Range End -->
+          <div class="col-6 col-md-4 col-lg-2">
+            <label for="filter-end" class="form-label small fw-semibold">End Date</label>
+            <input type="date" class="form-control form-control-sm" id="filter-end">
+          </div>
+          <!-- Status -->
+          <div class="col-12 col-md-4 col-lg-2">
+            <label for="filter-status" class="form-label small fw-semibold">Verification Status</label>
+            <select class="form-select form-select-sm" id="filter-status">
+              <option value="approved">Approved (Verified)</option>
+              <option value="pending">Pending</option>
+              <option value="">All Reports</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Preset Report type selectors -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top border-light gap-2">
+          <div class="d-flex gap-1.5 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPreset('today')">Daily</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPreset('weekly')">Weekly</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPreset('monthly')">Monthly</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPreset('all')">Clear Dates</button>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-primary px-3"><i class="bi bi-search me-1"></i> Apply Filter</button>
+            <button type="button" class="btn btn-sm btn-success px-3" onclick="triggerPrint()"><i class="bi bi-printer me-1"></i> Print / Export PDF</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- AGGREGATE SUMMARY STRIP -->
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 bg-primary text-white">
+          <div class="small text-white-50 text-uppercase fw-semibold mb-1">Total Filtered Reports</div>
+          <h4 id="summary-reports-count" class="fw-bold mb-0">0</h4>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 bg-danger text-white">
+          <div class="small text-white-50 text-uppercase fw-semibold mb-1">Total Reported Cases</div>
+          <h4 id="summary-cases-count" class="fw-bold mb-0">0</h4>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 bg-success text-white">
+          <div class="small text-white-50 text-uppercase fw-semibold mb-1">Demographics Affected</div>
+          <h5 id="summary-demographics" class="fw-bold mb-0" style="font-size: 1.15rem;">C: 0 | A: 0</h5>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS LIST TABLE -->
+    <div class="table-custom-card">
+      <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i>Report Records</h5>
+      <div class="table-responsive">
+        <table class="table table-custom align-middle">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Village</th>
+              <th>District / State</th>
+              <th>Water Source Details</th>
+              <th>Water Condition</th>
+              <th>Disease Name</th>
+              <th>Total Cases</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reports-table-body">
+            <tr><td colspan="8" class="text-center text-muted">Loading reports database...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Shared JS Utilities -->
+  <script src="/js/utils.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Default to loading active user session
+      const session = await Utils.checkSession();
+      
+      // Initialize layout based on session
+      // activePage = 'reports'
+      await Utils.initPage('reports');
+
+      // Set default preset filter to "monthly" (current month)
+      setPreset('monthly');
+      
+      // Load reports
+      await fetchReports();
+    });
+
+    // Preset Date Filters Handler
+    function setPreset(type) {
+      const startInput = document.getElementById('filter-start');
+      const endInput = document.getElementById('filter-end');
+      const today = new Date();
+
+      if (type === 'today') {
+        const yyyymmdd = today.toISOString().split('T')[0];
+        startInput.value = yyyymmdd;
+        endInput.value = yyyymmdd;
+      } else if (type === 'weekly') {
+        const lastWeek = new Date();
+        lastWeek.setDate(today.getDate() - 7);
+        startInput.value = lastWeek.toISOString().split('T')[0];
+        endInput.value = today.toISOString().split('T')[0];
+      } else if (type === 'monthly') {
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        // Correct timezone shift offset
+        const localOffset = firstDayOfMonth.getTimezoneOffset() * 60000;
+        const adjustedDate = new Date(firstDayOfMonth.getTime() - localOffset);
+        startInput.value = adjustedDate.toISOString().split('T')[0];
+        endInput.value = today.toISOString().split('T')[0];
+      } else {
+        startInput.value = '';
+        endInput.value = '';
+      }
+    }
+
+    function applyFilters(e) {
+      e.preventDefault();
+      fetchReports();
+    }
+
+    async function fetchReports() {
+      const village = document.getElementById('filter-village').value.trim();
+      const district = document.getElementById('filter-district').value.trim();
+      const disease = document.getElementById('filter-disease').value;
+      const startDate = document.getElementById('filter-start').value;
+      const endDate = document.getElementById('filter-end').value;
+      const status = document.getElementById('filter-status').value;
+
+      let url = `/api/reports?1=1`;
+      if (village) url += `&village=${encodeURIComponent(village)}`;
+      if (district) url += `&district=${encodeURIComponent(district)}`;
+      if (disease) url += `&disease=${disease}`;
+      if (startDate) url += `&startDate=${startDate}`;
+      if (endDate) url += `&endDate=${endDate}`;
+      if (status) url += `&status=${status}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const tbody = document.getElementById('reports-table-body');
+        
+        if (data.success) {
+          const reports = data.reports;
+
+          if (reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No matching records found.</td></tr>';
+            updateSummaryCards(0, 0, 0, 0);
+          } else {
+            tbody.innerHTML = reports.map(r => `
+              <tr>
+                <td>${Utils.formatDate(r.report_date)}</td>
+                <td><strong>${r.village_name}</strong></td>
+                <td>${r.district_name}, ${r.state_name}</td>
+                <td><span class="badge bg-light text-dark">${r.water_source}</span></td>
+                <td><span class="badge-status ${r.water_condition.toLowerCase()}">${r.water_condition}</span></td>
+                <td><strong class="text-primary">${r.disease_name}</strong></td>
+                <td>
+                  <span class="badge bg-danger">${r.cases_count} cases</span>
+                  <div class="text-muted small mt-0.5">C:${r.children_affected} / A:${r.adults_affected}</div>
+                </td>
+                <td><span class="badge-status ${r.status}">${r.status}</span></td>
+              </tr>
+            `).join('');
+
+            // Calculate Aggregates
+            let totalCases = 0;
+            let totalChildren = 0;
+            let totalAdults = 0;
+
+            reports.forEach(r => {
+              totalCases += r.cases_count;
+              totalChildren += r.children_affected;
+              totalAdults += r.adults_affected;
+            });
+
+            updateSummaryCards(reports.length, totalCases, totalChildren, totalAdults);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function updateSummaryCards(reportsCount, totalCases, totalChildren, totalAdults) {
+      document.getElementById('summary-reports-count').textContent = reportsCount;
+      document.getElementById('summary-cases-count').textContent = totalCases;
+      document.getElementById('summary-demographics').innerHTML = `Children: <strong>${totalChildren}</strong> | Adults: <strong>${totalAdults}</strong>`;
+    }
+
+    function triggerPrint() {
+      document.getElementById('generation-time').textContent = new Date().toLocaleString('en-IN');
+      window.print();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Worker Portal - Smart Health Monitoring</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navigation Sidebar container -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Greeting Bar -->
+    <div id="top-bar-container"></div>
+
+    <div class="row g-4">
+      <!-- REPORT SUBMISSION FORM -->
+      <div class="col-12 col-lg-5">
+        <div class="form-card">
+          <h4 class="fw-bold mb-3" id="form-title"><i class="bi bi-file-earmark-plus-fill text-primary me-2"></i>New Health & Water Report</h4>
+          <p class="text-muted small">Please submit accurate information. Reports start as pending and update warning alerts upon Administrator verification.</p>
+          <hr class="text-muted opacity-25">
+
+          <form id="report-form">
+            <input type="hidden" id="report-id">
+
+            <!-- Village Name Selection -->
+            <div class="mb-3">
+              <label for="report-village" class="form-label fw-semibold">Village</label>
+              <select class="form-select" id="report-village" onchange="autoFillLocation()" required>
+                <option value="">Select Assigned Village</option>
+              </select>
+            </div>
+
+            <!-- Auto-filled Location Details -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="report-district" class="form-label text-muted small">District</label>
+                <input type="text" class="form-control bg-light" id="report-district" readonly placeholder="District">
+              </div>
+              <div class="col-6">
+                <label for="report-state" class="form-label text-muted small">State</label>
+                <input type="text" class="form-control bg-light" id="report-state" readonly placeholder="State">
+              </div>
+            </div>
+
+            <!-- Date -->
+            <div class="mb-3">
+              <label for="report-date" class="form-label fw-semibold">Report Date</label>
+              <input type="date" class="form-control" id="report-date" required>
+            </div>
+
+            <!-- Water Details -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="report-water-source" class="form-label fw-semibold">Water Source</label>
+                <select class="form-select" id="report-water-source" required>
+                  <option value="">Select Source</option>
+                  <option value="Tube Well">Tube Well</option>
+                  <option value="River">River</option>
+                  <option value="Pond">Pond</option>
+                  <option value="Well">Well</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label for="report-water-condition" class="form-label fw-semibold">Water Condition</label>
+                <select class="form-select" id="report-water-condition" required>
+                  <option value="">Select Condition</option>
+                  <option value="Clean">Clean</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="Contaminated">Contaminated</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Disease Details -->
+            <div class="mb-3">
+              <label for="report-disease" class="form-label fw-semibold">Reported Disease</label>
+              <select class="form-select" id="report-disease" required>
+                <option value="">Select Disease Type</option>
+                <option value="Cholera">Cholera</option>
+                <option value="Typhoid">Typhoid</option>
+                <option value="Diarrhea">Diarrhea</option>
+                <option value="Dysentery">Dysentery</option>
+                <option value="Hepatitis A">Hepatitis A</option>
+              </select>
+            </div>
+
+            <!-- Affected Metrics -->
+            <div class="row g-2 mb-3">
+              <div class="col-4">
+                <label for="report-cases" class="form-label fw-semibold">Total Cases</label>
+                <input type="number" min="0" class="form-control" id="report-cases" required placeholder="0" oninput="calculateAverages()">
+              </div>
+              <div class="col-4">
+                <label for="report-children" class="form-label fw-semibold">Children</label>
+                <input type="number" min="0" class="form-control" id="report-children" required placeholder="0">
+              </div>
+              <div class="col-4">
+                <label for="report-adults" class="form-label fw-semibold">Adults</label>
+                <input type="number" min="0" class="form-control" id="report-adults" required placeholder="0">
+              </div>
+            </div>
+
+            <!-- Remarks -->
+            <div class="mb-4">
+              <label for="report-remarks" class="form-label fw-semibold">Remarks / Field Notes</label>
+              <textarea class="form-control" id="report-remarks" rows="2" placeholder="e.g. Broken pipe seal, rainfall run-off, etc."></textarea>
+            </div>
+
+            <!-- Submit buttons -->
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-custom-primary flex-grow-1" id="btn-submit">Submit Report</button>
+              <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- MY SUBMITTED REPORTS LIST -->
+      <div class="col-12 col-lg-7">
+        <div class="table-custom-card h-100">
+          <h4 class="fw-bold mb-3"><i class="bi bi-clipboard-data text-primary me-2"></i>My Reported Checkpoints</h4>
+          
+          <div class="table-responsive" style="max-height: 580px; overflow-y: auto;">
+            <table class="table table-custom align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Village</th>
+                  <th>Water Details</th>
+                  <th>Cases / Disease</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="worker-reports-body">
+                <tr><td colspan="6" class="text-center text-muted py-4">Loading reports...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Shared JS Utilities -->
+  <script src="/js/utils.js"></script>
+
+  <script>
+    let villagesList = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.initPage('worker');
+      
+      // Set today as default date
+      document.getElementById('report-date').valueAsDate = new Date();
+
+      await loadVillages();
+      await loadWorkerReports();
+    });
+
+    // Fetch villages to fill dropdown list
+    async function loadVillages() {
+      try {
+        const res = await fetch('/api/villages');
+        const data = await res.json();
+        if (data.success) {
+          villagesList = data.villages;
+          const select = document.getElementById('report-village');
+          select.innerHTML = '<option value="">Select Village</option>' + 
+            villagesList.map(v => `<option value="${v.id}">${v.name} (${v.district_name})</option>`).join('');
+        }
+      } catch (err) {
+        console.error('Error loading villages:', err);
+      }
+    }
+
+    // Auto-fill District and State based on Village selection
+    function autoFillLocation() {
+      const villageId = document.getElementById('report-village').value;
+      const districtInput = document.getElementById('report-district');
+      const stateInput = document.getElementById('report-state');
+
+      if (!villageId) {
+        districtInput.value = '';
+        stateInput.value = '';
+        return;
+      }
+
+      const village = villagesList.find(v => v.id == villageId);
+      if (village) {
+        districtInput.value = village.district_name;
+        stateInput.value = village.state_name;
+      }
+    }
+
+    // Helper to calculate or alert if breakdown doesn't match total
+    function calculateAverages() {
+      // Just helper focus triggers
+    }
+
+    // Load worker's own reports list
+    async function loadWorkerReports() {
+      try {
+        const res = await fetch('/api/reports');
+        const data = await res.json();
+        const tbody = document.getElementById('worker-reports-body');
+        
+        if (data.success) {
+          if (data.reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">You haven\'t submitted any reports yet.</td></tr>';
+          } else {
+            tbody.innerHTML = data.reports.map(r => {
+              const isApproved = r.status === 'approved';
+              return `
+                <tr>
+                  <td>${Utils.formatDate(r.report_date)}</td>
+                  <td><strong>${r.village_name}</strong></td>
+                  <td>
+                    <span class="badge bg-light text-dark">${r.water_source}</span>
+                    <span class="badge bg-light text-dark ms-1">${r.water_condition}</span>
+                  </td>
+                  <td>
+                    <strong class="text-primary">${r.disease_name}</strong>
+                    <div class="small text-muted mt-1">${r.cases_count} cases (C:${r.children_affected} / A:${r.adults_affected})</div>
+                  </td>
+                  <td><span class="badge-status ${r.status}">${r.status}</span></td>
+                  <td class="text-end">
+                    ${isApproved 
+                      ? `<button class="btn btn-sm btn-light border text-muted" disabled title="Approved reports cannot be changed"><i class="bi bi-lock-fill"></i></button>`
+                      : `
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editReport(${r.id})"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${r.id})"><i class="bi bi-trash"></i></button>
+                      `
+                    }
+                  </td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading reports:', err);
+      }
+    }
+
+    // Submit report handler (Post/Put)
+    document.getElementById('report-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('report-id').value;
+      const village_id = document.getElementById('report-village').value;
+      const report_date = document.getElementById('report-date').value;
+      const water_source = document.getElementById('report-water-source').value;
+      const water_condition = document.getElementById('report-water-condition').value;
+      const disease_name = document.getElementById('report-disease').value;
+      const cases_count = document.getElementById('report-cases').value;
+      const children_affected = document.getElementById('report-children').value;
+      const adults_affected = document.getElementById('report-adults').value;
+      const remarks = document.getElementById('report-remarks').value.trim();
+
+      // Simple validation for mathematical breakdown
+      if (parseInt(children_affected) + parseInt(adults_affected) !== parseInt(cases_count)) {
+        if (!confirm("The sum of Children Affected and Adults Affected does not match the Total Cases. Do you want to submit anyway?")) {
+          return;
+        }
+      }
+
+      const url = id ? `/api/reports/${id}` : '/api/reports';
+      const method = id ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            village_id,
+            report_date,
+            water_source,
+            water_condition,
+            disease_name,
+            cases_count,
+            children_affected,
+            adults_affected,
+            remarks
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification(data.message);
+          resetForm();
+          await loadWorkerReports();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        Utils.showNotification('Failed to submit report. Please try again.', 'error');
+      }
+    });
+
+    // Populate form with report details for edit
+    async function editReport(id) {
+      try {
+        const res = await fetch(`/api/reports/${id}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          const r = data.report;
+          document.getElementById('report-id').value = r.id;
+          document.getElementById('report-village').value = r.village_id;
+          
+          // Format date string for HTML Date input (YYYY-MM-DD)
+          const formattedDate = new Date(r.report_date).toISOString().split('T')[0];
+          document.getElementById('report-date').value = formattedDate;
+
+          document.getElementById('report-water-source').value = r.water_source;
+          document.getElementById('report-water-condition').value = r.water_condition;
+          document.getElementById('report-disease').value = r.disease_name;
+          document.getElementById('report-cases').value = r.cases_count;
+          document.getElementById('report-children').value = r.children_affected;
+          document.getElementById('report-adults').value = r.adults_affected;
+          document.getElementById('report-remarks').value = r.remarks || '';
+
+          autoFillLocation();
+
+          document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Edit Report';
+          document.getElementById('btn-submit').textContent = 'Update Report';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Delete a report
+    async function deleteReport(id) {
+      if (!confirm('Are you sure you want to delete this pending report? This action cannot be undone.')) return;
+      try {
+        const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification('Report deleted successfully.', 'warning');
+          await loadWorkerReports();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('report-form').reset();
+      document.getElementById('report-id').value = '';
+      document.getElementById('report-district').value = '';
+      document.getElementById('report-state').value = '';
+      document.getElementById('report-date').valueAsDate = new Date();
+      document.getElementById('form-title').innerHTML = '<i class="bi bi-file-earmark-plus-fill text-primary me-2"></i>New Health & Water Report';
+      document.getElementById('btn-submit').textContent = 'Submit Report';
+    }
+  </script>
+</body>
+</html>

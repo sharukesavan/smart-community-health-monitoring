@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Smart Health Monitoring</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Custom CSS -->
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navigation Sidebar container -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Greeting Bar -->
+    <div id="top-bar-container"></div>
+
+    <!-- Bootstrap Nav Tabs for Admin Tasks -->
+    <ul class="nav nav-tabs border-bottom-0 mb-4 gap-2 no-print" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active btn px-3 py-2 fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+          <i class="bi bi-speedometer2 me-1"></i> Overview
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link btn px-3 py-2 fw-semibold" id="approvals-tab" data-bs-toggle="tab" data-bs-target="#approvals" type="button" role="tab" onclick="loadPendingReports()">
+          <i class="bi bi-patch-check me-1"></i> Report Approvals <span id="pending-reports-badge" class="badge bg-danger rounded-pill d-none">0</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link btn px-3 py-2 fw-semibold" id="villages-tab" data-bs-toggle="tab" data-bs-target="#villages" type="button" role="tab" onclick="loadVillagesTab()">
+          <i class="bi bi-buildings me-1"></i> Manage Villages
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link btn px-3 py-2 fw-semibold" id="workers-tab" data-bs-toggle="tab" data-bs-target="#workers" type="button" role="tab" onclick="loadWorkersTab()">
+          <i class="bi bi-people me-1"></i> Manage Health Workers
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabsContent">
+      <!-- 1. OVERVIEW TAB -->
+      <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <!-- KPI Cards Row -->
+        <div class="row g-4 mb-4">
+          <!-- Total Villages -->
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card-stat stat-primary p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted small text-uppercase fw-semibold mb-1">Total Villages</h6>
+                  <h3 id="stat-villages" class="fw-bold mb-0">0</h3>
+                </div>
+                <div class="stat-icon"><i class="bi bi-building"></i></div>
+              </div>
+            </div>
+          </div>
+          <!-- Total Health Workers -->
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card-stat stat-primary p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted small text-uppercase fw-semibold mb-1">Health Workers</h6>
+                  <h3 id="stat-workers" class="fw-bold mb-0">0</h3>
+                </div>
+                <div class="stat-icon"><i class="bi bi-person-fill-check"></i></div>
+              </div>
+            </div>
+          </div>
+          <!-- Reported Disease Cases -->
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card-stat stat-primary p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted small text-uppercase fw-semibold mb-1">Reported Cases</h6>
+                  <h3 id="stat-cases" class="fw-bold mb-0">0</h3>
+                </div>
+                <div class="stat-icon"><i class="bi bi-virus"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <!-- Safe Villages -->
+          <div class="col-12 col-md-4">
+            <div class="card-stat stat-success p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted small text-uppercase fw-semibold mb-1">Safe Villages</h6>
+                  <h4 id="stat-safe" class="fw-bold mb-0 text-success">0</h4>
+                </div>
+                <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+              </div>
+            </div>
+          </div>
+          <!-- Warning Villages -->
+          <div class="col-12 col-md-4">
+            <div class="card-stat stat-warning p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted small text-uppercase fw-semibold mb-1">Warning (Cases: 10-20)</h6>
+                  <h4 id="stat-warning" class="fw-bold mb-0 text-warning">0</h4>
+                </div>
+                <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+              </div>
+            </div>
+          </div>
+          <!-- Danger Villages -->
+          <div class="col-12 col-md-4">
+            <div class="card-stat stat-danger p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted small text-uppercase fw-semibold mb-1">Danger (Cases: >20)</h6>
+                  <h4 id="stat-danger" class="fw-bold mb-0 text-danger">0</h4>
+                </div>
+                <div class="stat-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="row g-4 mb-4">
+          <!-- Monthly Cases -->
+          <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 p-4">
+              <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Monthly Disease Cases</h5>
+              <div style="height: 320px; position: relative;">
+                <canvas id="chart-monthly"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- Water Source status -->
+          <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0 p-4">
+              <h5 class="fw-bold mb-3"><i class="bi bi-droplet-half text-success me-2"></i>Water Source Status</h5>
+              <div style="height: 320px; position: relative;">
+                <canvas id="chart-water"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <!-- Disease Trend / Distribution -->
+          <div class="col-12 col-md-6">
+            <div class="card shadow-sm border-0 p-4">
+              <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill text-warning me-2"></i>Disease Distribution</h5>
+              <div style="height: 320px; position: relative;">
+                <canvas id="chart-disease"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- Village Wise cases -->
+          <div class="col-12 col-md-6">
+            <div class="card shadow-sm border-0 p-4">
+              <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-fill text-danger me-2"></i>Village Comparison</h5>
+              <div style="height: 320px; position: relative;">
+                <canvas id="chart-village"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Logs -->
+        <div class="row g-4">
+          <!-- Recent Reports -->
+          <div class="col-12 col-lg-7">
+            <div class="table-custom-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0"><i class="bi bi-clock-history text-primary me-2"></i>Recent Reports</h5>
+                <a href="/reports.html" class="btn btn-sm btn-link text-decoration-none">View All</a>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-custom">
+                  <thead>
+                    <tr>
+                      <th>Village</th>
+                      <th>Disease</th>
+                      <th>Cases</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-reports-body">
+                    <tr><td colspan="5" class="text-center text-muted">Loading reports...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- Recent Alerts -->
+          <div class="col-12 col-lg-5">
+            <div class="table-custom-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0"><i class="bi bi-bell-fill text-danger me-2"></i>Active Alerts</h5>
+                <a href="/alerts.html" class="btn btn-sm btn-link text-decoration-none">EWS Console</a>
+              </div>
+              <div class="alert-feed" id="recent-alerts-body">
+                <div class="text-center text-muted py-3">No active warning alerts.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. REPORT APPROVALS TAB -->
+      <div class="tab-pane fade" id="approvals" role="tabpanel">
+        <div class="table-custom-card">
+          <h4 class="fw-bold mb-3"><i class="bi bi-patch-check-fill text-primary me-2"></i>Pending Reports for Verification</h4>
+          <div class="table-responsive">
+            <table class="table table-custom align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Village</th>
+                  <th>Health Worker</th>
+                  <th>Water Details</th>
+                  <th>Disease Info</th>
+                  <th>Cases</th>
+                  <th>Remarks</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pending-reports-body">
+                <tr><td colspan="8" class="text-center text-muted">No pending reports found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. VILLAGES TAB -->
+      <div class="tab-pane fade" id="villages" role="tabpanel">
+        <div class="row g-4">
+          <!-- Village Form -->
+          <div class="col-12 col-lg-4">
+            <div class="form-card">
+              <h5 class="fw-bold mb-3" id="village-form-title"><i class="bi bi-plus-circle text-primary me-2"></i>Add New Village</h5>
+              <form id="village-form">
+                <input type="hidden" id="village-id">
+                <div class="mb-3">
+                  <label for="village-name" class="form-label">Village Name</label>
+                  <input type="text" class="form-control" id="village-name" required placeholder="e.g. Sualkuchi">
+                </div>
+                <div class="mb-3">
+                  <label for="village-state" class="form-label">State</label>
+                  <select class="form-select" id="village-state" onchange="filterDistrictsDropdown()" required>
+                    <option value="">Select State</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="village-district" class="form-label">District</label>
+                  <select class="form-select" id="village-district" required>
+                    <option value="">Select District</option>
+                  </select>
+                </div>
+                <div class="row g-2 mb-4">
+                  <div class="col-6">
+                    <label for="village-lat" class="form-label">Latitude</label>
+                    <input type="number" step="0.0001" class="form-control" id="village-lat" required placeholder="e.g. 26.1732">
+                  </div>
+                  <div class="col-6">
+                    <label for="village-lng" class="form-label">Longitude</label>
+                    <input type="number" step="0.0001" class="form-control" id="village-lng" required placeholder="e.g. 91.5647">
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-custom-primary flex-grow-1" id="btn-submit-village">Submit</button>
+                  <button type="button" class="btn btn-secondary" onclick="resetVillageForm()">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <!-- Villages Table -->
+          <div class="col-12 col-lg-8">
+            <div class="table-custom-card">
+              <h5 class="fw-bold mb-3"><i class="bi bi-table text-primary me-2"></i>Villages Directory</h5>
+              <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                <table class="table table-custom">
+                  <thead>
+                    <tr>
+                      <th>Village</th>
+                      <th>District / State</th>
+                      <th>Coordinates</th>
+                      <th>Status</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="villages-table-body">
+                    <tr><td colspan="5" class="text-center text-muted">Loading villages...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. WORKERS TAB -->
+      <div class="tab-pane fade" id="workers" role="tabpanel">
+        <div class="row g-4">
+          <!-- Worker Form -->
+          <div class="col-12 col-lg-4">
+            <div class="form-card">
+              <h5 class="fw-bold mb-3" id="worker-form-title"><i class="bi bi-person-plus text-primary me-2"></i>Register Health Worker</h5>
+              <form id="worker-form">
+                <input type="hidden" id="worker-id">
+                <input type="hidden" id="worker-user-id">
+                
+                <div class="mb-3">
+                  <label for="worker-name" class="form-label">Full Name</label>
+                  <input type="text" class="form-control" id="worker-name" required placeholder="e.g. John Doe">
+                </div>
+                <div class="mb-3" id="worker-username-group">
+                  <label for="worker-username" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="worker-username" required placeholder="e.g. worker1">
+                </div>
+                <div class="mb-3" id="worker-password-group">
+                  <label for="worker-password" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="worker-password" required placeholder="Enter password">
+                </div>
+                <div class="mb-3">
+                  <label for="worker-phone" class="form-label">Phone Number</label>
+                  <input type="tel" class="form-control" id="worker-phone" placeholder="10-digit number">
+                </div>
+                <div class="mb-3">
+                  <label for="worker-email" class="form-label">Email Address</label>
+                  <input type="email" class="form-control" id="worker-email" placeholder="e.g. worker@health.gov">
+                </div>
+                <div class="mb-4">
+                  <label for="worker-village" class="form-label">Assigned Village</label>
+                  <select class="form-select" id="worker-village">
+                    <option value="">Select Village</option>
+                  </select>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-custom-primary flex-grow-1" id="btn-submit-worker">Register</button>
+                  <button type="button" class="btn btn-secondary" onclick="resetWorkerForm()">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <!-- Workers Table -->
+          <div class="col-12 col-lg-8">
+            <div class="table-custom-card">
+              <h5 class="fw-bold mb-3"><i class="bi bi-people-fill text-primary me-2"></i>Registered Health Workers</h5>
+              <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                <table class="table table-custom">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Username</th>
+                      <th>Contact</th>
+                      <th>Assigned Village</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="workers-table-body">
+                    <tr><td colspan="5" class="text-center text-muted">Loading health workers...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Shared JS Utilities -->
+  <script src="/js/utils.js"></script>
+
+  <script>
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.initPage('dashboard');
+      loadOverviewStats();
+      loadOverviewCharts();
+    });
+
+    // Overview Stats Loader
+    async function loadOverviewStats() {
+      try {
+        const res = await fetch('/api/dashboard/stats');
+        const data = await res.json();
+        if (data.success) {
+          const stats = data.stats;
+          document.getElementById('stat-villages').textContent = stats.total_villages;
+          document.getElementById('stat-workers').textContent = stats.total_workers;
+          document.getElementById('stat-cases').textContent = stats.total_cases;
+          document.getElementById('stat-safe').textContent = stats.safe_villages;
+          document.getElementById('stat-warning').textContent = stats.warning_villages;
+          document.getElementById('stat-danger').textContent = stats.danger_villages;
+
+          // Render recent reports
+          const tbody = document.getElementById('recent-reports-body');
+          if (stats.recent_reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No reports submitted yet.</td></tr>';
+          } else {
+            tbody.innerHTML = stats.recent_reports.map(r => `
+              <tr>
+                <td class="fw-semibold">${r.village_name}</td>
+                <td>${r.disease_name}</td>
+                <td><span class="badge bg-light text-dark">${r.cases_count} cases</span></td>
+                <td>${Utils.formatDate(r.report_date)}</td>
+                <td><span class="badge-status ${r.status}">${r.status}</span></td>
+              </tr>
+            `).join('');
+          }
+
+          // Count pending reports and update badge
+          const pendingCount = stats.recent_reports.filter(r => r.status === 'pending').length;
+          const badge = document.getElementById('pending-reports-badge');
+          if (pendingCount > 0) {
+            badge.textContent = pendingCount;
+            badge.classList.remove('d-none');
+          } else {
+            badge.classList.add('d-none');
+          }
+
+          // Render active alerts
+          const alertsFeed = document.getElementById('recent-alerts-body');
+          if (stats.recent_alerts.length === 0) {
+            alertsFeed.innerHTML = '<div class="text-center text-muted py-3">No active alerts generated.</div>';
+          } else {
+            alertsFeed.innerHTML = stats.recent_alerts.map(a => `
+              <div class="alert-item ${a.cases_count > 20 ? 'danger' : 'warning'} shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill fs-4 text-${a.cases_count > 20 ? 'danger' : 'warning'}"></i>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold small text-uppercase text-${a.cases_count > 20 ? 'danger' : 'warning'}">
+                      ${a.cases_count > 20 ? 'DANGER ALERT' : 'WARNING ALERT'}
+                    </span>
+                    <span class="text-muted small">${Utils.formatDate(a.alert_date)}</span>
+                  </div>
+                  <div class="small fw-semibold text-dark">${a.alert_message}</div>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+
+    // Chart.js rendering
+    let chartMonthlyInstance, chartWaterInstance, chartDiseaseInstance, chartVillageInstance;
+
+    async function loadOverviewCharts() {
+      try {
+        const res = await fetch('/api/dashboard/charts');
+        const rData = await res.json();
+        if (!rData.success) return;
+
+        const chartData = rData.data;
+
+        // 1. Monthly Cases Line Chart
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthlyValues = Array(12).fill(0);
+        chartData.monthlyCases.forEach(item => {
+          monthlyValues[item.month - 1] = item.cases;
+        });
+
+        if (chartMonthlyInstance) chartMonthlyInstance.destroy();
+        chartMonthlyInstance = new Chart(document.getElementById('chart-monthly'), {
+          type: 'line',
+          data: {
+            labels: months,
+            datasets: [{
+              label: 'Total Cases',
+              data: monthlyValues,
+              borderColor: '#0f62fe',
+              backgroundColor: 'rgba(15, 98, 254, 0.1)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 3,
+              pointBackgroundColor: '#0f62fe'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4] } } }
+          }
+        });
+
+        // 2. Water Source Status Doughnut
+        // Aggregate clean vs contaminated
+        const waterSourcesMap = {};
+        chartData.waterQuality.forEach(item => {
+          if (!waterSourcesMap[item.water_source]) {
+            waterSourcesMap[item.water_source] = { clean: 0, moderate: 0, contaminated: 0 };
+          }
+          waterSourcesMap[item.water_source][item.water_condition.toLowerCase()] += item.count;
+        });
+
+        const labelsWater = Object.keys(waterSourcesMap);
+        const dataClean = labelsWater.map(k => waterSourcesMap[k].clean);
+        const dataMod = labelsWater.map(k => waterSourcesMap[k].moderate);
+        const dataContam = labelsWater.map(k => waterSourcesMap[k].contaminated);
+
+        if (chartWaterInstance) chartWaterInstance.destroy();
+        chartWaterInstance = new Chart(document.getElementById('chart-water'), {
+          type: 'bar',
+          data: {
+            labels: labelsWater,
+            datasets: [
+              { label: 'Clean', data: dataClean, backgroundColor: '#2e7d32' },
+              { label: 'Moderate', data: dataMod, backgroundColor: '#f59e0b' },
+              { label: 'Contaminated', data: dataContam, backgroundColor: '#d32f2f' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+          }
+        });
+
+        // 3. Disease Distribution Pie
+        const diseaseLabels = chartData.diseaseDistribution.map(d => d.disease_name);
+        const diseaseValues = chartData.diseaseDistribution.map(d => d.cases);
+
+        if (chartDiseaseInstance) chartDiseaseInstance.destroy();
+        chartDiseaseInstance = new Chart(document.getElementById('chart-disease'), {
+          type: 'doughnut',
+          data: {
+            labels: diseaseLabels,
+            datasets: [{
+              data: diseaseValues,
+              backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+
+        // 4. Village cases Comparison Bar
+        const villageLabels = chartData.villageCases.map(v => v.village_name);
+        const villageValues = chartData.villageCases.map(v => v.cases);
+
+        if (chartVillageInstance) chartVillageInstance.destroy();
+        chartVillageInstance = new Chart(document.getElementById('chart-village'), {
+          type: 'bar',
+          data: {
+            labels: villageLabels,
+            datasets: [{
+              label: 'Total Cases',
+              data: villageValues,
+              backgroundColor: 'rgba(15, 98, 254, 0.85)',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      } catch (err) {
+        console.error('Error loading charts:', err);
+      }
+    }
+
+    // 2. Report Approvals Tab Logic
+    async function loadPendingReports() {
+      try {
+        const res = await fetch('/api/reports?status=pending');
+        const data = await res.json();
+        const tbody = document.getElementById('pending-reports-body');
+        if (data.success) {
+          if (data.reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-clipboard2-check fs-2 text-muted d-block mb-2"></i>No reports pending approval.</td></tr>';
+          } else {
+            tbody.innerHTML = data.reports.map(r => `
+              <tr>
+                <td>${Utils.formatDate(r.report_date)}</td>
+                <td><strong class="text-dark">${r.village_name}</strong><br><small class="text-muted">${r.district_name}, ${r.state_name}</small></td>
+                <td>${r.worker_name}</td>
+                <td><span class="badge bg-light text-dark">${r.water_source}</span><br><span class="badge-status ${r.water_condition.toLowerCase()}">${r.water_condition}</span></td>
+                <td><strong class="text-primary">${r.disease_name}</strong></td>
+                <td>
+                  <span class="badge bg-danger">${r.cases_count} cases</span>
+                  <div class="small text-muted mt-1">C: ${r.children_affected} | A: ${r.adults_affected}</div>
+                </td>
+                <td class="small text-muted">${r.remarks || '-'}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-success me-1" onclick="approveReport(${r.id})"><i class="bi bi-check-lg"></i> Approve</button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${r.id})"><i class="bi bi-trash"></i> Delete</button>
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function approveReport(id) {
+      if (!confirm('Are you sure you want to approve this health report? It will activate early warnings and update village status.')) return;
+      try {
+        const res = await fetch(`/api/reports/${id}/approve`, { method: 'PATCH' });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification('Report approved successfully!');
+          loadPendingReports();
+          loadOverviewStats();
+          loadOverviewCharts();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteReport(id) {
+      if (!confirm('Are you sure you want to reject and delete this report? This action is permanent.')) return;
+      try {
+        const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification('Report deleted/rejected successfully!', 'warning');
+          loadPendingReports();
+          loadOverviewStats();
+          loadOverviewCharts();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 3. Villages Tab Logic
+    let statesList = [];
+    let districtsList = [];
+
+    async function loadVillagesTab() {
+      // Load Dropdown Options
+      try {
+        const locRes = await fetch('/api/villages/locations');
+        const locData = await locRes.json();
+        if (locData.success) {
+          statesList = locData.states;
+          districtsList = locData.districts;
+
+          const stateSelect = document.getElementById('village-state');
+          stateSelect.innerHTML = '<option value="">Select State</option>' + 
+            statesList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+
+        // Fetch Villages list
+        const res = await fetch('/api/villages');
+        const data = await res.json();
+        const tbody = document.getElementById('villages-table-body');
+        if (data.success) {
+          if (data.villages.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No villages added yet.</td></tr>';
+          } else {
+            tbody.innerHTML = data.villages.map(v => `
+              <tr>
+                <td><strong class="text-dark">${v.name}</strong></td>
+                <td>${v.district_name}, ${v.state_name}</td>
+                <td><code class="small">${v.latitude}, ${v.longitude}</code></td>
+                <td><span class="badge-status ${v.status}">${v.status}</span></td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-primary me-1" onclick="editVillage(${v.id}, '${v.name}', ${v.state_id}, ${v.district_id}, ${v.latitude}, ${v.longitude})"><i class="bi bi-pencil-square"></i></button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteVillage(${v.id})"><i class="bi bi-trash"></i></button>
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function filterDistrictsDropdown(selectedDistrictId = null) {
+      const stateId = document.getElementById('village-state').value;
+      const districtSelect = document.getElementById('village-district');
+      
+      if (!stateId) {
+        districtSelect.innerHTML = '<option value="">Select District</option>';
+        return;
+      }
+
+      const filtered = districtsList.filter(d => d.state_id == stateId);
+      districtSelect.innerHTML = '<option value="">Select District</option>' + 
+        filtered.map(d => `<option value="${d.id}" ${selectedDistrictId == d.id ? 'selected' : ''}>${d.name}</option>`).join('');
+    }
+
+    // Submit Village Form
+    document.getElementById('village-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('village-id').value;
+      const name = document.getElementById('village-name').value.trim();
+      const district_id = document.getElementById('village-district').value;
+      const latitude = document.getElementById('village-lat').value;
+      const longitude = document.getElementById('village-lng').value;
+
+      const url = id ? `/api/villages/${id}` : '/api/villages';
+      const method = id ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, district_id, latitude, longitude })
+        });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification(data.message);
+          resetVillageForm();
+          loadVillagesTab();
+          loadOverviewStats();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    function editVillage(id, name, state_id, district_id, lat, lng) {
+      document.getElementById('village-id').value = id;
+      document.getElementById('village-name').value = name;
+      document.getElementById('village-state').value = state_id;
+      filterDistrictsDropdown(district_id);
+      document.getElementById('village-lat').value = lat;
+      document.getElementById('village-lng').value = lng;
+      
+      document.getElementById('village-form-title').innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Edit Village';
+      document.getElementById('btn-submit-village').textContent = 'Update';
+    }
+
+    async function deleteVillage(id) {
+      if (!confirm('Are you sure you want to delete this village? All associated health reports and alerts will be deleted.')) return;
+      try {
+        const res = await fetch(`/api/villages/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification('Village deleted successfully!', 'warning');
+          loadVillagesTab();
+          loadOverviewStats();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function resetVillageForm() {
+      document.getElementById('village-form').reset();
+      document.getElementById('village-id').value = '';
+      document.getElementById('village-district').innerHTML = '<option value="">Select District</option>';
+      document.getElementById('village-form-title').innerHTML = '<i class="bi bi-plus-circle text-primary me-2"></i>Add New Village';
+      document.getElementById('btn-submit-village').textContent = 'Submit';
+    }
+
+    // 4. Health Workers Tab Logic
+    async function loadWorkersTab() {
+      try {
+        // Fetch Villages list for assign village dropdown
+        const vilRes = await fetch('/api/villages');
+        const vilData = await vilRes.json();
+        const workerVillageSelect = document.getElementById('worker-village');
+        if (vilData.success) {
+          workerVillageSelect.innerHTML = '<option value="">Select Village</option>' + 
+            vilData.villages.map(v => `<option value="${v.id}">${v.name} (${v.district_name})</option>`).join('');
+        }
+
+        // Fetch health workers list
+        const res = await fetch('/api/users/workers');
+        const data = await res.json();
+        const tbody = document.getElementById('workers-table-body');
+        if (data.success) {
+          if (data.workers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No health workers registered.</td></tr>';
+          } else {
+            tbody.innerHTML = data.workers.map(w => `
+              <tr>
+                <td><strong class="text-dark">${w.name}</strong></td>
+                <td><code>${w.username}</code></td>
+                <td>${w.phone || '-'}<br><small class="text-muted">${w.email || '-'}</small></td>
+                <td>${w.village_name ? `<span class="badge bg-info-subtle text-info-emphasis">${w.village_name}</span>` : '<span class="text-muted">Unassigned</span>'}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-primary me-1" onclick="editWorker(${w.id}, ${w.user_id}, '${w.name}', '${w.phone}', '${w.email}', ${w.assigned_village_id})"><i class="bi bi-pencil-square"></i></button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteWorker(${w.user_id})"><i class="bi bi-trash"></i></button>
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('worker-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('worker-id').value;
+      const user_id = document.getElementById('worker-user-id').value;
+      const name = document.getElementById('worker-name').value.trim();
+      const phone = document.getElementById('worker-phone').value.trim();
+      const email = document.getElementById('worker-email').value.trim();
+      const assigned_village_id = document.getElementById('worker-village').value;
+
+      let url = '/api/users/workers';
+      let method = 'POST';
+      let payload = {};
+
+      if (id) {
+        url = `/api/users/workers/${id}`;
+        method = 'PUT';
+        payload = { name, phone, email, assigned_village_id };
+      } else {
+        const username = document.getElementById('worker-username').value.trim();
+        const password = document.getElementById('worker-password').value;
+        payload = { username, password, name, phone, email, assigned_village_id };
+      }
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification(data.message);
+          resetWorkerForm();
+          loadWorkersTab();
+          loadOverviewStats();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    function editWorker(id, userId, name, phone, email, villageId) {
+      document.getElementById('worker-id').value = id;
+      document.getElementById('worker-user-id').value = userId;
+      document.getElementById('worker-name').value = name;
+      document.getElementById('worker-phone').value = phone === 'null' ? '' : phone;
+      document.getElementById('worker-email').value = email === 'null' ? '' : email;
+      document.getElementById('worker-village').value = villageId || '';
+
+      // Hide username and password fields on edits
+      document.getElementById('worker-username-group').classList.add('d-none');
+      document.getElementById('worker-username').removeAttribute('required');
+      document.getElementById('worker-password-group').classList.add('d-none');
+      document.getElementById('worker-password').removeAttribute('required');
+
+      document.getElementById('worker-form-title').innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Edit Worker Details';
+      document.getElementById('btn-submit-worker').textContent = 'Update Details';
+    }
+
+    async function deleteWorker(userId) {
+      if (!confirm('Are you sure you want to delete this health worker? Their logins and work reports will remain, but profiles are cleared.')) return;
+      try {
+        const res = await fetch(`/api/users/workers/${userId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          Utils.showNotification('Worker profile removed successfully.', 'warning');
+          loadWorkersTab();
+          loadOverviewStats();
+        } else {
+          Utils.showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function resetWorkerForm() {
+      document.getElementById('worker-form').reset();
+      document.getElementById('worker-id').value = '';
+      document.getElementById('worker-user-id').value = '';
+      
+      document.getElementById('worker-username-group').classList.remove('d-none');
+      document.getElementById('worker-username').setAttribute('required', 'true');
+      document.getElementById('worker-password-group').classList.remove('d-none');
+      document.getElementById('worker-password').setAttribute('required', 'true');
+
+      document.getElementById('worker-form-title').innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>Register Health Worker';
+      document.getElementById('btn-submit-worker').textContent = 'Register';
+    }
+  </script>
+</body>
+</html>
